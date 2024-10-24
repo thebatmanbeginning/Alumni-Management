@@ -1,5 +1,5 @@
 def is_valid_email(email):
-    import regex as re
+    import re
     # Remove any leading or trailing whitespace
     email = email.strip()
     # Define the regex pattern for a valid email address
