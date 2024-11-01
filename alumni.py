@@ -1,11 +1,11 @@
 from utils import login
 from utils import get_input
 from utils import is_valid_email
-def Alumni():   
+def Alumni():
     print('''-------------OPTIONS----------------\n
-    1. Register as an Alumni\n
-    2. View All Events\n
-    3. Register for an Event\n
+    1. Alumni Registration\n
+    2. View Events\n
+    3. Event Registration\n
     4. Main Menu\n
     5. Exit''')
     
@@ -38,48 +38,17 @@ def get_valid_date(prompt):
 
     print("Too many invalid attempts.")
     return None  # Return None if the user fails to provide a valid date
-def create_alumni_students_table():
-    import mysql.connector
-
-    db = mysql.connector.connect(host='localhost', user='root', password='1234', database='alumni')
-    cursor = db.cursor()
-
-    # Creating alumni_students table with an auto-incremented alumni_id as the primary key
-    create_table_command = '''
-    CREATE TABLE IF NOT EXISTS alumni_students (
-        alumni_id INT AUTO_INCREMENT PRIMARY KEY,
-        Name VARCHAR(255),
-        M_Name VARCHAR(255),
-        F_Name VARCHAR(255),
-        Class VARCHAR(50),
-        DOB DATE,
-        Contact_Number VARCHAR(15),
-        Email_ID VARCHAR(255),
-        Passing_Year INT,
-        Stream VARCHAR(100),
-        Current_Country VARCHAR(100),
-        Current_City VARCHAR(100),
-        Employment_Status VARCHAR(50),
-        E_Domain VARCHAR(100),
-        Company VARCHAR(255)
-    );
-    '''
-    cursor.execute(create_table_command)
-    db.commit()  # Committing the changes
-    cursor.close()
-    db.close()
 def alumni_register():
-    create_alumni_students_table()
     import mysql.connector
 
     db = mysql.connector.connect(host='localhost', user='root', password='1234', database='alumni')
     cursor = db.cursor()
 
     while True:
+        # Get the alumni's name
         name = get_input('Enter your name:', is_name=True)
-        f_name = get_input("Enter your Father's name: ", is_name=True)
-        passing_year = get_input("Enter your Passing Year: ", is_int=True)
 
+        # Get and validate the email
         while True:
             email_input = input("Enter your Email-ID: ")
             if is_valid_email(email_input):
@@ -88,78 +57,103 @@ def alumni_register():
             else:
                 print("Invalid email format. Enter valid Email-ID")
 
-        # Get and validate the date of birth
-        dob = get_valid_date("Enter your Date of Birth (YYYY-MM-DD): ")
-        if dob is None:  # If the user fails to provide a valid date
-            print("Failed to register due to invalid date input.")
-            break
-
-        # Search for student in students table
-        command = "SELECT * FROM students WHERE Name=%s AND F_Name=%s AND Passing_Year=%s"
-        cursor.execute(command, (name, f_name, passing_year))
+        # Search for student in the students table
+        command = "SELECT * FROM students WHERE Name=%s"
+        cursor.execute(command, (name,))
         data = cursor.fetchone()
 
         if data:
             print("----------WELCOME----------")
             # Check if the alumni is already registered
-            existing_alumni = search_alumni(name=name, email=email, passing_year=passing_year)
+            existing_alumni = search_alumni(name=name, email=email)
             if existing_alumni:
                 print("You are already registered as an Alumni!")
             else:
-                # Insert into alumni_students
+                # Insert into alumni_students with data from the students table
                 cursor.execute('''INSERT INTO alumni_students (Name, F_Name, Class, DOB, Contact_Number, Email_ID, 
                                          Passing_Year, Stream, Current_Country, Current_City, 
                                          Employment_Status, E_Domain, Company) 
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
-                    (name, f_name, data[3], dob, None, email, passing_year, None, None, None, None, None, None))
+                    (name, data[1], data[3], data[4], None, email, data[2], None, None, None, None, None, None))
 
                 db.commit()  # Commit the changes
                 print('You are successfully registered as an Alumni!')
             break
         else:
-            print("No Data found in students table! Please enter valid details.")
+            print("No Data found in students table! Please enter a valid name.")
             break
 
     cursor.close()
     db.close()
 def view_events():
-    import mysql
     import mysql.connector
-    db=mysql.connector.connect(host='localhost',user='root',password='1234',database='alumni')
-    cursor=db.cursor()
+    from prettytable import PrettyTable
+
+    db = mysql.connector.connect(host='localhost', user='root', password='1234', database='alumni')
+    cursor = db.cursor()
+    
     while True:
         print('-------------------------------EVENTS-----------------------------')
-        print('''Please Select an Option\n1.Upcomming Events (Active)
-              \n2.Completed Events \n3.Postponded Events
-              \n4.Cancelled Events\n5.Main Manu\n6.Exit''')
-        choice=int(input('Enter the option(1-6):'))
-        if choice==1:
-            cursor.execute("SELECT * FROM event WHERE status='Active'")
-            active_events=cursor.fetchall()
+        print('''Please Select an Option
+        1. Upcoming Events (Active)
+        2. Completed Events
+        3. Postponed Events
+        4. Cancelled Events
+        5. Main Menu
+        6. Exit''')
+        
+        choice = int(input('Enter the option (1-6): '))
+        
+        # Initialize the PrettyTable
+        table = PrettyTable()
+        table.field_names = ["Event ID", "Event Name", "Event Date", "Venue", "Status"]
+
+        if choice == 1:
+            cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Venue, Status FROM event WHERE Status='Active'")
+            active_events = cursor.fetchall()
             for event in active_events:
-                print(event)
-        elif choice==2:
-            cursor.execute("SELECT * FROM event WHERE status='Completed'")
-            completed_events=cursor.fetchall()
+                table.add_row(event)
+            print(table)
+            break  # Exit the loop after displaying the events
+
+        elif choice == 2:
+            cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Venue, Status FROM event WHERE Status='Completed'")
+            completed_events = cursor.fetchall()
             for event in completed_events:
-               print(event)
-           
-        elif choice==3:
-            cursor.execute("SELECT * FROM event WHERE status='Postponded'")
-            postponded_events=cursor.fetchall()
+                table.add_row(event)
+            print(table)
+            break  # Exit the loop after displaying the events
+
+        elif choice == 3:
+            cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Venue, Status FROM event WHERE Status='Postponed'")
+            postponded_events = cursor.fetchall()
             for event in postponded_events:
-                print(event)
-        elif choice==4:
-            cursor.execute("SELECT * FROM event WHERE status='Cancelled'")
-            cancelled_events=cursor.fetchall()
+                table.add_row(event)
+            print(table)
+            break  # Exit the loop after displaying the events
+
+        elif choice == 4:
+            cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Venue, Status FROM event WHERE Status='Cancelled'")
+            cancelled_events = cursor.fetchall()
             for event in cancelled_events:
-                print(event)
-        elif choice==5:
+                table.add_row(event)
+            print(table)
+            break  # Exit the loop after displaying the events
+
+        elif choice == 5:
             login()
-            break
+            break  # Exit the loop to go back to login
+
+        elif choice == 6:
+            cursor.close()
+            db.close()
+            return  # Exit the function
+
         else:
             print('Invalid choice !!!')
-#view_events()
+    
+    cursor.close()
+    db.close()
 def search_alumni(name=None, email=None, passing_year=None):
     import mysql.connector
 
@@ -189,32 +183,40 @@ def search_alumni(name=None, email=None, passing_year=None):
 def reg_events():
     import mysql.connector
     from datetime import datetime
+    from prettytable import PrettyTable  # Localized import for PrettyTable
 
     db = mysql.connector.connect(host='localhost', user='root', password='1234', database='alumni')
     cursor = db.cursor()
 
     # Fetch active events with available seats
-    cursor.execute("SELECT event_id, event_name, event_date, seats_available FROM event WHERE status='Active' AND seats_available > 0")
+    cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Available_Seats FROM event WHERE Status='Active' AND Available_Seats > 0")
     events = cursor.fetchall()
 
     if not events:
         print("No active events with available seats.")
         return
 
-    print('-------------------Upcoming Events-------------------')
+    # Create a PrettyTable instance
+    table = PrettyTable()
+    table.field_names = ["Event ID", "Event Name", "Event Date", "Seats Available"]
+
+    # Add rows to the table
     for event in events:
-        print("Event ID:", event[0], "Event Name:", event[1], "Event Date:", event[2], "Seats Available:", event[3])
+        table.add_row(event)
+
+    print('-------------------Upcoming Events-------------------')
+    print(table)  # Print the formatted table
 
     while True:
         event_id = get_input("Enter the Event ID to register: ", is_int=True)
-        cursor.execute("SELECT event_id, seats_available FROM event WHERE event_id=%s AND status='Active' AND seats_available > 0", (event_id,))
+        cursor.execute("SELECT Event_ID, Available_Seats FROM event WHERE Event_ID=%s AND Status='Active' AND Available_Seats > 0", (event_id,))
         selected_event = cursor.fetchone()
 
         if selected_event:
             seats_available = selected_event[1]
 
             alumni_email = get_input("Enter your Email ID to register for the event: ")
-            cursor.execute("SELECT id FROM alumni_students WHERE Email_ID=%s", (alumni_email,))
+            cursor.execute("SELECT Alumni_ID FROM alumni_students WHERE Email_ID=%s", (alumni_email,))
             alumni_data = cursor.fetchone()
 
             if alumni_data:
@@ -222,11 +224,11 @@ def reg_events():
                 registration_date = datetime.now().date()
 
                 # Insert registration record
-                cursor.execute('''INSERT INTO event_registration (event_id, alumni_id, registration_date)
+                cursor.execute('''INSERT INTO event_registration (Event_ID, Alumni_ID, Registration_Date)
                                   VALUES (%s, %s, %s)''', (event_id, alumni_id, registration_date))
 
                 # Decrement the number of available seats by 1
-                cursor.execute("UPDATE event SET seats_available = seats_available - 1 WHERE event_id = %s", (event_id,))
+                cursor.execute("UPDATE event SET Available_Seats = Available_Seats - 1 WHERE Event_ID = %s", (event_id,))
 
                 db.commit()
                 print("You have successfully registered for the event! Seats remaining:", seats_available - 1)

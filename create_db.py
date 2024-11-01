@@ -118,7 +118,7 @@ def insert_admin_credentials(cursor):
 
 # Optional installation function for required libraries
 def install_required_libraries():
-    required_libraries = ['mysql-connector-python']
+    required_libraries = ['mysql','mysql-connector-python','regex','prettytable','sys','datetime','smtplib']
     for library in required_libraries:
         try:
             __import__(library)

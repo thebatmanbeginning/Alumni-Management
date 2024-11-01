@@ -7,13 +7,13 @@ def Admin():
     if login_successful:  #Only runs when the login_successful is True 
         print('-------WELCOME----------')
         print('''Please Select an Option
-              \n1. Register a student
-              \n2. Update existing student data
-              \n3. Create event
-              \n4. Update an  event
-              \n5. Send message
-              \n6. Search a Student
-              \n7. Return to Main Menu
+              \n1. Student Registration
+              \n2. Update Student Data
+              \n3. Create Event
+              \n4. Update Event
+              \n5. Send Mail
+              \n6. Search Students
+              \n7. Main Menu
               \n8. Exit''')
         print("\n\n\n")
         choice = int(input('Enter a Choice (1-8): '))
@@ -416,6 +416,7 @@ def send_email_message():
 def update_event():
     import mysql.connector
     from datetime import datetime
+    from prettytable import PrettyTable
 
     db = mysql.connector.connect(host='localhost', user='root', password='1234', database='alumni')
     cursor = db.cursor()
@@ -466,6 +467,19 @@ def update_event():
         print("Event updated successfully.")
     except mysql.connector.Error as err:
         print("Error:", err)
-    finally:
-        cursor.close()
-        db.close()
+        return  # Exit the function on error
+
+    # Fetch the updated event details
+    cursor.execute("SELECT * FROM event WHERE Event_ID = %s", (event_id,))
+    updated_event = cursor.fetchone()
+
+    # Create and display the updated event in PrettyTable format
+    table = PrettyTable()
+    table.field_names = ["Event ID", "Event Name", "Event Date", "Venue", "Status"]
+    table.add_row(updated_event)
+
+    print("\nUpdated Event Details:")
+    print(table)
+
+    cursor.close()
+    db.close()
