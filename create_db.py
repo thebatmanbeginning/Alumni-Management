@@ -1,11 +1,13 @@
-def create_database_and_tables():
-    import mysql.connector
+import mysql.connector
+import subprocess
+import sys
 
+def reset_and_create_database():
     # Connect to MySQL server (without specifying a database)
-    db= mysql.connector.connect(host='localhost', user='root', password='1234')
+    db = mysql.connector.connect(host='localhost', user='root', password='1234')
     cursor = db.cursor()
 
-    # Drop the alumni database if it exists
+    # Drop the alumni database if it exists, effectively clearing it
     cursor.execute("DROP DATABASE IF EXISTS alumni;")
     print("Dropped existing 'alumni' database (if it existed).")
 
@@ -16,7 +18,7 @@ def create_database_and_tables():
     # Use the alumni database
     cursor.execute("USE alumni;")
 
-    # Create admin_login table
+    # Recreate admin_login table for storing admin credentials
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS admin_login (
         admin_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -25,16 +27,20 @@ def create_database_and_tables():
     );
     ''')
 
-    # Create students table
+    # Insert initial admin credentials
+    insert_admin_credentials(cursor)
+
+    # Recreate students table to store student information for validation
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS students (
         student_id INT AUTO_INCREMENT PRIMARY KEY,
         Name VARCHAR(255),
         F_Name VARCHAR(255),
         M_Name VARCHAR(255),
-        Email_ID VARCHAR(255),
         Class VARCHAR(50),
         DOB DATE,
+        Contact_Number VARCHAR(15),
+        Email_ID VARCHAR(255),
         Passing_Year INT,
         Stream VARCHAR(100),
         Current_Country VARCHAR(100),
@@ -45,7 +51,7 @@ def create_database_and_tables():
     );
     ''')
 
-    # Create alumni_students table
+    # Recreate alumni_students table for registered alumni data
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS alumni_students (
         alumni_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -66,97 +72,64 @@ def create_database_and_tables():
     );
     ''')
 
-    # Create event table
+    # Recreate event table with Status as VARCHAR instead of ENUM
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS event (
-        event_id INT AUTO_INCREMENT PRIMARY KEY,
-        event_name VARCHAR(255) NOT NULL,
-        event_date DATE NOT NULL,
-        type VARCHAR(100),
-        venue VARCHAR(255),
-        total_seats INT NOT NULL,
-        available_seats INT NOT NULL,
-        status ENUM('Active', 'Cancelled', 'Postponed', 'Completed') DEFAULT 'Active'
+        Event_ID INT AUTO_INCREMENT PRIMARY KEY,
+        Event_Name VARCHAR(255),
+        Event_Date DATE,
+        Type VARCHAR(100),
+        Venue VARCHAR(255),
+        Total_Seats INT,
+        Available_Seats INT,
+        Status VARCHAR(20)  -- Now a VARCHAR instead of ENUM
     );
     ''')
 
-    # Create event_registration table
+    # Recreate event_registration table to track alumni event registrations
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS event_registration (
         registration_id INT AUTO_INCREMENT PRIMARY KEY,
         event_id INT NOT NULL,
         alumni_id INT NOT NULL,
         registration_date DATE NOT NULL,
-        FOREIGN KEY (event_id) REFERENCES event(event_id),
+        FOREIGN KEY (event_id) REFERENCES event(Event_ID),
         FOREIGN KEY (alumni_id) REFERENCES alumni_students(alumni_id)
     );
     ''')
 
-    # Create messages table for admin messaging functionality
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS messages (
-        message_id INT AUTO_INCREMENT PRIMARY KEY,
-        sender_id INT NOT NULL,
-        recipient_email VARCHAR(255) NOT NULL,
-        subject VARCHAR(255) NOT NULL,
-        body TEXT,
-        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (sender_id) REFERENCES admin_login(admin_id)
-    );
-    ''')
-
-    # Create announcements table for storing admin announcements
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS announcements (
-        announcement_id INT AUTO_INCREMENT PRIMARY KEY,
-        title VARCHAR(255) NOT NULL,
-        content TEXT NOT NULL,
-        posted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-    ''')
-
-    # Create admin_events_log table to track admin actions on events
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS admin_events_log (
-        log_id INT AUTO_INCREMENT PRIMARY KEY,
-        admin_id INT NOT NULL,
-        event_id INT NOT NULL,
-        action VARCHAR(100) NOT NULL,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (admin_id) REFERENCES admin_login(admin_id),
-        FOREIGN KEY (event_id) REFERENCES event(event_id)
-    );
-    ''')
-
-    # Commit changes and close connection
+    # Commit changes and close the database connection
     db.commit()
     cursor.close()
     db.close()
-    print("Database and all tables created successfully from scratch.")
+    print("Database and specified tables cleared and recreated successfully.")
 
-# Installation logic for required libraries
-import subprocess
-import sys
+def insert_admin_credentials(cursor):
+    # SQL command to insert admin credentials
+    insert_admin_query = """
+    INSERT INTO admin_login (username, password) 
+    VALUES (%s, %s);
+    """
+    # Values to insert for the admin
+    admin_values = ("admin", "admin123@#")
 
+    # Execute the query with the provided values
+    cursor.execute(insert_admin_query, admin_values)
+
+# Optional installation function for required libraries
 def install_required_libraries():
-    required_libraries = [
-        'mysql-connector-python',  # For MySQL connectivity
-        'datetime',  # Standard library for date handling
-        'regex',  # Regex for data validation
-        'smtplib'  # Email handling (standard library)
-    ]
-
+    required_libraries = ['mysql-connector-python']
     for library in required_libraries:
         try:
             __import__(library)
         except ImportError:
-            print(f"Installing {library}...")
+            print("Installing", library, "...")
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', library])
-            print(f"{library} installed successfully.")
+            print(library, "installed successfully.")
         else:
-            print(f"{library} is already installed.")
+            print(library, "is already installed.")
 
 # Execute functions when the script runs
 if __name__ == "__main__":
     install_required_libraries()
-    create_database_and_tables()
+    reset_and_create_database()

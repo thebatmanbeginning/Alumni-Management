@@ -20,31 +20,39 @@ def login():
         print("Invalid Input!")
 def get_user_input(prompt, is_int=False, is_name=False, is_date=False):
     import datetime
-    while True:
-        value = input(prompt)
-        # Allow blank input for optional fields
-        if value.strip() == "":
-            return None  # Return None if the input is empty
+    value = input(prompt)
+    
+    # Accept and return empty input as None (optional fields)
+    if value.strip() == "":
+        return None
 
-        if is_int:
-            try:
-                return int(value)
-            except ValueError:
-                print("Invalid input. Please enter a valid integer.")
-        elif is_name:
-            # Check if the value contains only letters and spaces
-            if all(part.isalpha() for part in value.split()):
-                return value
-            print("Invalid input. Please enter a valid name (letters only).")
-        elif is_date:
-            try:
-                datetime.datetime.strptime(value, '%Y-%m-%d')
-                return value  # Return the valid date as a string
-            except ValueError and TypeError:
-                print("Invalid date format. Please use YYYY-MM-DD.")
+    # Validate integer input if is_int is True
+    if is_int:
+        try:
+            return int(value)
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+            return get_user_input(prompt, is_int=True)  # Retry the prompt
 
-        else:
-            return value  # Allow any non-empty input
+    # Validate name input if is_name is True
+    elif is_name:
+        # Ensure the value contains only letters and spaces
+        if all(part.isalpha() for part in value.split()):
+            return value
+        print("Invalid input. Please enter a valid name (letters only).")
+        return get_user_input(prompt, is_name=True)  # Retry the prompt
+
+    # Validate date input if is_date is True
+    elif is_date:
+        try:
+            datetime.datetime.strptime(value, '%Y-%m-%d')
+            return value  # Return the valid date as a string
+        except ValueError:
+            print("Invalid date format. Please use YYYY-MM-DD.")
+            return get_user_input(prompt, is_date=True)  # Retry the prompt
+
+    # For general input without specific validation
+    return value
 def get_input(prompt, is_int=False, is_name=False, is_date=False):
     import datetime
     while True:

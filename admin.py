@@ -142,16 +142,17 @@ def register_stu():
 def search():
     from utils import get_user_input
     import mysql.connector
+    from prettytable import PrettyTable  # Import PrettyTable
 
-    # Connect to the database
+    # Establish a database connection
     db = mysql.connector.connect(host="localhost", user="root", password="1234", database="alumni")
     cursor = db.cursor()
 
-    # Base query
-    query = "SELECT alumni_id, Name, F_Name, M_Name, Passing_Year, Stream, Employment_Status, Company, E_Domain, Email_ID FROM students WHERE 1=1"
+    # Base query for searching students, using student_id as the primary key
+    query = "SELECT student_id, Name, F_Name, M_Name, Passing_Year, Stream, Employment_Status, Company, E_Domain, Email_ID FROM students WHERE 1=1"
     params = []
 
-    # Get search criteria from the user with proper validation
+    # Prompt for search criteria
     print("Enter the search criteria (press Enter to skip any filter):")
     name = get_user_input("Enter the student's name (or press Enter to skip): ", is_name=True)
     f_name = get_user_input("Enter the father's name (or press Enter to skip): ", is_name=True)
@@ -163,64 +164,80 @@ def search():
     domain = get_user_input("Enter the employment domain (or press Enter to skip): ")
 
     # Add conditions based on user input, if provided
-    if name is not None:
+    if name:
         query += " AND Name = %s"
         params.append(name)
-    if f_name is not None:
+    if f_name:
         query += " AND F_Name = %s"
         params.append(f_name)
-    if m_name is not None:
+    if m_name:
         query += " AND M_Name = %s"
         params.append(m_name)
-    if passing_year is not None:
+    if passing_year:
         query += " AND Passing_Year = %s"
         params.append(passing_year)
-    if stream is not None:
+    if stream:
         query += " AND Stream = %s"
         params.append(stream)
-    if employment_status is not None:
+    if employment_status:
         query += " AND Employment_Status = %s"
         params.append(employment_status)
-    if company is not None:
+    if company:
         query += " AND Company = %s"
         params.append(company)
-    if domain is not None:
+    if domain:
         query += " AND E_Domain = %s"
         params.append(domain)
 
-    # Execute the query with or without filters
+    # Execute the query with filters if provided
     cursor.execute(query, tuple(params))
     results = cursor.fetchall()
-    print(results)
+
+    # Create a PrettyTable object for displaying results
+    table = PrettyTable()
+    table.field_names = ["Student ID", "Name", "Father's Name", "Mother's Name", "Passing Year", 
+                         "Stream", "Employment Status", "Company", "Employment Domain", "Email ID"]
+
+    # Add rows to the table
+    for result in results:
+        table.add_row(result)
+
+    # Display results in a table format
+    if not results:
+        print("No results found.")
+    else:
+        print("Search Results:")
+        print(table)  # Print the PrettyTable
+
+    # Close the connection
     cursor.close()
     db.close()
 
-    return results  # Return the results for further processing
+    return results
 '''----------------------------------------------UPDATE STUDENT-----------------------------------------------------'''
 def update_stu():
-    import mysql
+    from utils import get_user_input
     import mysql.connector
 
     db = mysql.connector.connect(host="localhost", user="root", password="1234", database="alumni")
     cursor = db.cursor()
 
-    stu_ids = search()  # Assuming this function returns a list of student IDs
+    # Search for students and get results
+    students = search()
+    if not students:
+        print("No students found for the given criteria.")
+        return
 
+    # Choose a student to update if multiple results were returned
+    if len(students) > 1:
+        print("Multiple students found. Select a student to update:")
+        for i in range(len(students)):
+            print(i + 1, ":", students[i])
+        choice = get_user_input("Select a student by number to update: ", is_int=True)
+        student_id = students[choice - 1][0]  # Get student_id from the selected result
+    else:
+        student_id = students[0][0]  # Use the first result's student_id if only one result
 
-    # Initialize stu_id
-    stu_id = None
-
-    # Check if stu_ids is a list and has at least one item
-    if isinstance(stu_ids, list):
-        if stu_ids:  # Check if the list is not empty
-            stu_id = stu_ids[0]  # Get the first student ID
-
-    # Check if a valid student ID was found 
-        if stu_id is None:
-            print("No valid student ID found.")
-            db.close()
-            cursor.close()
-            return
     print("----------------Select option to update-----------------")
     print(
         "1: Class\n"
@@ -233,107 +250,52 @@ def update_stu():
         "8: Employment Domain\n"
         "9: Company\n"
     )
-    
-    option = get_input("Please enter your Option (1-9): ", is_int=True)
-    
-    if option == 1:
-        # Class Updation
-        while True:
-            new_class = get_input("Enter the new class: ")
-            command = "UPDATE students SET Class = %s WHERE Stu_Id = %s"
-            cursor.execute(command, (new_class, stu_id))  # Use stu_id here
-            db.commit()
-            print("Class updated successfully!")
-            break
-            
-    elif option == 2:
-        # Contact Number Updation
-        while True:
-            new_contact = get_input("Enter the new contact number: ", is_int=True)
-            command = "UPDATE students SET Contact_No = %s WHERE Stu_Id = %s"
-            cursor.execute(command, (new_contact, stu_id))
-            db.commit()
-            print("Contact Number successfully updated!")
-            break
-            
-    elif option == 3:
-        # Email_ID Updation
-        while True:
-            new_email = input("Enter the new email ID: ")
-            if is_valid_email(new_email):
-                command = "UPDATE students SET Email_ID = %s WHERE Stu_Id = %s"
-                cursor.execute(command, (new_email, stu_id))
-                db.commit()
-                print("Email ID updated successfully!")
-                break
-            else:
-                print("Invalid email format. Please try again.")
-            
-    elif option == 4:
-        # Stream Updation
-        while True:
-            new_stream = get_input("Enter the new stream: ", is_name=True)
-            command = "UPDATE students SET Stream = %s WHERE Stu_Id = %s"
-            cursor.execute(command, (new_stream, stu_id))
-            db.commit()
-            print("Stream updated successfully!")
-            break
-            
-    elif option == 5:
-        # Current Country Updation
-        while True:
-            new_country = get_input("Enter the new country: ", is_name=True)
-            command = "UPDATE students SET Current_Country = %s WHERE Stu_Id = %s"
-            cursor.execute(command, (new_country, stu_id))
-            db.commit()
-            print("Current Country updated successfully!")
-            break
-            
-    elif option == 6:
-        # Current City Updation
-        while True:
-            new_city = get_input("Enter the new city: ")
-            command = "UPDATE students SET Current_City = %s WHERE Stu_Id = %s"
-            cursor.execute(command, (new_city, stu_id))
-            db.commit()
-            print("Current City updated successfully!")
-            break
-            
-    elif option == 7:
-        # Employment Status Updation
-        while True:
-            new_employment_status = get_input("Enter the new employment status: ")
-            command = "UPDATE students SET Employment_Status = %s WHERE Stu_Id = %s"
-            cursor.execute(command, (new_employment_status, stu_id))
-            db.commit()
-            print("Employment Status updated successfully!")
-            break
-            
-    elif option == 8:
-        # Employment Domain
-        while True:
-            new_employment_domain = get_input("Enter the new employment domain: ")
-            command = "UPDATE students SET Employment_Domain = %s WHERE Stu_Id = %s"
-            cursor.execute(command, (new_employment_domain, stu_id))
-            db.commit()
-            print("Employment Domain updated successfully!")
-            break
-            
-    elif option == 9:
-        # Company Updation
-        while True:
-            new_company = get_input("Enter the new company: ")
-            command = "UPDATE students SET Company = %s WHERE Stu_Id = %s"
-            cursor.execute(command, (new_company, stu_id))
-            db.commit()
-            print("Company updated successfully!")
-            break
-            
-    else:
-        print('Invalid input. Please select a valid option (1-9).')
 
-    db.close()
+    option = get_user_input("Please enter your Option (1-9): ", is_int=True)
+
+    # Define field updates based on the selected option
+    if option == 1:
+        new_value = get_user_input("Enter the new class: ")
+        command = "UPDATE students SET Class = %s WHERE student_id = %s"
+    elif option == 2:
+        new_value = get_user_input("Enter the new contact number: ", is_int=True)
+        command = "UPDATE students SET Contact_Number = %s WHERE student_id = %s"
+    elif option == 3:
+        new_value = input("Enter the new email ID: ")
+        if not is_valid_email(new_value):
+            print("Invalid email format. Please try again.")
+            return
+        command = "UPDATE students SET Email_ID = %s WHERE student_id = %s"
+    elif option == 4:
+        new_value = get_user_input("Enter the new stream: ", is_name=True)
+        command = "UPDATE students SET Stream = %s WHERE student_id = %s"
+    elif option == 5:
+        new_value = get_user_input("Enter the new country: ", is_name=True)
+        command = "UPDATE students SET Current_Country = %s WHERE student_id = %s"
+    elif option == 6:
+        new_value = get_user_input("Enter the new city: ")
+        command = "UPDATE students SET Current_City = %s WHERE student_id = %s"
+    elif option == 7:
+        new_value = get_user_input("Enter the new employment status: ")
+        command = "UPDATE students SET Employment_Status = %s WHERE student_id = %s"
+    elif option == 8:
+        new_value = get_user_input("Enter the new employment domain: ")
+        command = "UPDATE students SET E_Domain = %s WHERE student_id = %s"
+    elif option == 9:
+        new_value = get_user_input("Enter the new company: ")
+        command = "UPDATE students SET Company = %s WHERE student_id = %s"
+    else:
+        print("Invalid option selected.")
+        return
+
+    # Execute the update command
+    cursor.execute(command, (new_value, student_id))
+    db.commit()
+    print("Update successful.")
+
+    # Close database resources
     cursor.close()
+    db.close()
 '''----------------------------------------------CREATE EVENT-------------------------------------------------------'''
 def create_event():
     import mysql.connector
@@ -343,23 +305,11 @@ def create_event():
     cursor = db.cursor()
 
     # Create a new event table
-    cursor.execute('''
-    CREATE IF NOT EXISTS TABLE event (
-        Event_ID INT AUTO_INCREMENT PRIMARY KEY,
-        Event_Name VARCHAR(255),
-        Event_Date DATE,
-        Type VARCHAR(100),
-        Venue VARCHAR(255),
-        Total_Seats INT,
-        Available_Seats INT,
-        Status ENUM('Active', 'Cancelled', 'Postponed', 'Completed')
-    )
-    ''')
 
     event_name = input("Enter the Event Name: ")
     
     while True:
-        event_date_input = input('Enter Date of Event (YYYY-MM-DD): ')
+        event_date_input = get_input('Enter Date of Event (YYYY-MM-DD): ',is_date=True)
         try:
             event_date = datetime.strptime(event_date_input, '%Y-%m-%d').date()
             if event_date < datetime.now().date() + timedelta(weeks=2):  # Check for 2 weeks
@@ -402,54 +352,66 @@ def create_event():
 def send_email_message():
     import smtplib
 
-    # Fetch the search result first
-    student_data = search()
+    while True:
+        # Fetch the search result
+        student_data = search()
 
-    if not student_data:  # If no students are found
-        print("No students found to send emails.")
-        return
+        if not student_data:  # If no students are found
+            print("No students found to send emails.")
+            return
 
-    # Get the student ID to whom the email will be sent
-    student_id = input("Enter the Student ID to send the email to: ")
+        # Display search results and collect email addresses and names
+        recipients = []
+        for student in student_data:
+            student_id = student[0]
+            recipient_name = student[1]
+            recipient_email = student[9]
+            print("ID:", student_id, "Name:", recipient_name, "Email:", recipient_email)
+            recipients.append((recipient_name, recipient_email))
 
-    # Find the selected student's email and name using the ID
-    recipient_email = None
-    recipient_name = None
+        # Confirm sending email to all recipients
+        send_to_all = input("Send email to all listed students? (Y/N): ").strip().upper()
+        if send_to_all == "Y":
+            try:
+                # Email server setup
+                smtp_server = "smtp.gmail.com"
+                smtp_port = 587
+                sender_email = "projects.euroschool@gmail.com"  # Sender's email
+                app_password = "nznx fzpw hvcp mgyd"  # App password for Gmail
 
-    for student in student_data:
-        if str(student[0]) == student_id:  # Use the index for alumni_id
-            recipient_email = student[9]  # Email_ID is at index 9
-            recipient_name = student[1]  # Name is at index 1
-            break
+                server = smtplib.SMTP(smtp_server, smtp_port)
+                server.starttls()
+                server.login(sender_email, app_password)
 
-    if not recipient_email:
-        print("Invalid Student ID. Email not sent.")
-        return
+                # Email content
+                subject = "Important Update for Alumni"
+                body_template = (
+                    "Dear {},\n\n"
+                    "We are reaching out to inform you about some exciting updates for alumni members.\n\n"
+                    "Best regards,\nAlumni Management Team"
+                )
 
-    try:
-        # Prepare the email
-        smtp_server = "smtp.gmail.com"
-        smtp_port = 587
-        sender_email = "projects.euroschool@gmail.com"  # Use your sender's email here
-        app_password = "nznx fzpw hvcp mgyd"  # App password for Gmail
+                for recipient_name, recipient_email in recipients:
+                    body = body_template.replace("{}", recipient_name)
+                    message = "Subject: " + subject + "\n\n" + body
 
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
-        server.login(sender_email, app_password)
+                    # Send the email to the current recipient
+                    server.sendmail(sender_email, recipient_email, message)
+                    print("Email sent to", recipient_name, "at", recipient_email)
 
-        subject = "Important Update for Alumni"
-        body = "Dear {},\n\nWe are reaching out to inform you about some exciting updates for alumni members.\n\nBest regards,\nAlumni Management Team".format(recipient_name)
+                server.quit()
+                break
 
-        message = "Subject: {}\n\n{}".format(subject, body)
+            except Exception as e:
+                print("Failed to send emails:", str(e))
+                break
 
-        # Send the email
-        server.sendmail(sender_email, recipient_email, message)
-        print("Email sent to {} at {}".format(recipient_name, recipient_email))
+        elif send_to_all == "N":
+            print("Restarting search.")
+            continue
 
-        server.quit()
-
-    except Exception as e:
-        print("Failed to send email: " + str(e))
+        else:
+            print("Invalid input. Please enter 'Y' or 'N'.")
 '''----------------------------------------------UPDATE EVENT-------------------------------------------------------'''
 def update_event():
     import mysql.connector
@@ -458,10 +420,7 @@ def update_event():
     db = mysql.connector.connect(host='localhost', user='root', password='1234', database='alumni')
     cursor = db.cursor()
 
-    # Get the Event ID to update
     event_id = input("Enter the Event ID to update: ")
-
-    # Check if the event exists
     cursor.execute("SELECT * FROM event WHERE Event_ID = %s", (event_id,))
     event = cursor.fetchone()
 
@@ -471,16 +430,21 @@ def update_event():
         db.close()
         return
 
-    # Update status
+    valid_statuses = ["Active", "Cancelled", "Postponed", "Completed"]
+
     status = input("Enter the new status (Active, Cancelled, Postponed, Completed) or press Enter to keep current: ")
     if status.strip() == "":
-        status = event[6]  # Keep the current status if no new input is provided
+        status = event[7]
+    elif status not in valid_statuses:
+        print("Invalid status. Please enter one of the following: Active, Cancelled, Postponed, Completed.")
+        cursor.close()
+        db.close()
+        return
 
-    # Update event date
     while True:
-        event_date_input = input('Enter new Date of Event (YYYY-MM-DD) or press Enter to keep current: ')
+        event_date_input = input("Enter new Date of Event (YYYY-MM-DD) or press Enter to keep current: ")
         if event_date_input.strip() == "":
-            event_date = event[2]  # Keep the current date if no new input is provided
+            event_date = event[2]
             break
         try:
             event_date = datetime.strptime(event_date_input, '%Y-%m-%d').date()
@@ -488,12 +452,10 @@ def update_event():
         except ValueError:
             print("Invalid date format. Please use YYYY-MM-DD.")
 
-    # Update venue
     venue = input("Enter the new venue or press Enter to keep current: ")
     if venue.strip() == "":
-        venue = event[4]  # Keep the current venue if no new input is provided
+        venue = event[4]
 
-    # Update the event in the database
     command = '''UPDATE event 
                  SET Status = %s, Event_Date = %s, Venue = %s 
                  WHERE Event_ID = %s'''
@@ -503,8 +465,7 @@ def update_event():
         db.commit()
         print("Event updated successfully.")
     except mysql.connector.Error as err:
-        print("Error: {}".format(err))
+        print("Error:", err)
     finally:
         cursor.close()
         db.close()
-       
