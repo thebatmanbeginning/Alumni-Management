@@ -40,7 +40,7 @@ The Alumni Management System is a Python-based application integrated with a MyS
    - This script will prompt for login as an Admin or Alumni and proceed based on the user role.
 
 2. **Alumni Operations**:
-   - **Register as an Alumni**: Alumni can register themselves in the system after verifying their details against the `students` table.
+   - **Register as an Alumni**: Alumni can register in the system after verifying their details against the `students` table.
    - **View Events**: Alumni can browse events categorized by status (e.g., Active, Completed).
    - **Event Registration**: Alumni can register for available events, with real-time seat verification.
 
@@ -52,7 +52,7 @@ The Alumni Management System is a Python-based application integrated with a MyS
 ```
 ├── alumni.py             # Alumni operations (registration, events, event registration)
 ├── admin.py              # Admin operations (student and event management)
-├── computer_project.py   # Entry point of the application; initiates the login process
+├── Alumni_management.py   # Entry point of the application; initiates the login process
 ├── utils.py              # Utility functions for login, email validation, and input handling
 ├── create_db.py          # Script to initialize and configure the MySQL database
 └── README.md             # Documentation
@@ -61,7 +61,7 @@ The Alumni Management System is a Python-based application integrated with a MyS
 ### File Descriptions:
 - **`alumni.py`**: Contains functions for alumni to register, view available events, and register for events with seat availability.
 - **`admin.py`**: Manages administrative functions like adding students to the `students` table and managing event details.
-- **`computer_project.py`**: The main entry point that launches the system by prompting users to log in as Admin or Alumni.
+- **`Alumni_management.py`**: This is the main entry point that launches the system by prompting users to log in as Admin or Alumni.
 - **`utils.py`**: Provides shared utility functions, including:
   - **`is_valid_email`**: Validates email format.
   - **`login`**: Guides user login by role.
