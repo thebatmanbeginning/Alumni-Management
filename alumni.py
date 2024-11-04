@@ -85,6 +85,7 @@ def alumni_register():
 
     cursor.close()
     db.close()
+    Alumni()
 def view_events():
     import mysql.connector
     from prettytable import PrettyTable
@@ -154,6 +155,7 @@ def view_events():
     
     cursor.close()
     db.close()
+    Alumni()
 def search_alumni(name=None, email=None, passing_year=None):
     import mysql.connector
 
@@ -178,7 +180,7 @@ def search_alumni(name=None, email=None, passing_year=None):
 
     cursor.close()
     db.close()
-
+    Alumni()
     return results
 def reg_events():
     import mysql.connector
@@ -240,3 +242,4 @@ def reg_events():
 
     cursor.close()
     db.close()
+    Alumni()

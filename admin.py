@@ -38,6 +38,44 @@ def Admin():
             print('Invalid input!')
     else:
         print('Login failed. Please try again.')
+
+def Admin2():
+    login_successful = True  # Getting the result(True or False)
+    
+    if login_successful:  #Only runs when the login_successful is True 
+        print('-------WELCOME----------')
+        print('''Please Select an Option
+              \n1. Student Registration
+              \n2. Update Student Data
+              \n3. Create Event
+              \n4. Update Event
+              \n5. Send Mail
+              \n6. Search Students
+              \n7. Main Menu
+              \n8. Exit''')
+        print("\n\n\n")
+        choice = int(input('Enter a Choice (1-8): '))
+        
+        if choice == 1:
+            register_stu()
+        elif choice == 2:
+            update_stu()
+        elif choice == 3:
+            create_event()
+        elif choice == 4:
+            update_event()
+        elif choice == 5:
+            send_email_message()
+        elif choice == 6:
+            search()
+        elif choice == 7:
+            login()
+        elif choice == 8:
+            exit()
+        else:
+            print('Invalid input!')
+    else:
+        print('Login failed. Please try again.')
 def adminlog():
     import mysql
     import mysql.connector
@@ -138,6 +176,7 @@ def register_stu():
     cursor.close()
     db.close()
     print("Student registered successfully!")
+    Admin2()
 '''----------------------------------------------SEARCH STUDENT-----------------------------------------------------'''
 def search():
     from utils import get_user_input
@@ -208,12 +247,11 @@ def search():
     else:
         print("Search Results:")
         print(table)  # Print the PrettyTable
-
+        return result
     # Close the connection
     cursor.close()
     db.close()
-
-    return results
+    Admin2()   
 '''----------------------------------------------UPDATE STUDENT-----------------------------------------------------'''
 def update_stu():
     from utils import get_user_input
@@ -296,6 +334,7 @@ def update_stu():
     # Close database resources
     cursor.close()
     db.close()
+    Admin2()
 '''----------------------------------------------CREATE EVENT-------------------------------------------------------'''
 def create_event():
     import mysql.connector
@@ -348,6 +387,7 @@ def create_event():
     finally:
         cursor.close()
         db.close()
+        Admin2()
 '''----------------------------------------------SEND MESSAGE-------------------------------------------------------'''
 def send_email_message():
     import smtplib
@@ -412,6 +452,7 @@ def send_email_message():
 
         else:
             print("Invalid input. Please enter 'Y' or 'N'.")
+    Admin2()
 '''----------------------------------------------UPDATE EVENT-------------------------------------------------------'''
 def update_event():
     import mysql.connector
@@ -421,65 +462,63 @@ def update_event():
     db = mysql.connector.connect(host='localhost', user='root', password='1234', database='alumni')
     cursor = db.cursor()
 
-    event_id = input("Enter the Event ID to update: ")
-    cursor.execute("SELECT * FROM event WHERE Event_ID = %s", (event_id,))
-    event = cursor.fetchone()
-
-    if not event:
-        print("Event not found.")
-        cursor.close()
-        db.close()
-        return
-
-    valid_statuses = ["Active", "Cancelled", "Postponed", "Completed"]
-
-    status = input("Enter the new status (Active, Cancelled, Postponed, Completed) or press Enter to keep current: ")
-    if status.strip() == "":
-        status = event[7]
-    elif status not in valid_statuses:
-        print("Invalid status. Please enter one of the following: Active, Cancelled, Postponed, Completed.")
-        cursor.close()
-        db.close()
-        return
-
-    while True:
-        event_date_input = input("Enter new Date of Event (YYYY-MM-DD) or press Enter to keep current: ")
-        if event_date_input.strip() == "":
-            event_date = event[2]
-            break
-        try:
-            event_date = datetime.strptime(event_date_input, '%Y-%m-%d').date()
-            break
-        except ValueError:
-            print("Invalid date format. Please use YYYY-MM-DD.")
-
-    venue = input("Enter the new venue or press Enter to keep current: ")
-    if venue.strip() == "":
-        venue = event[4]
-
-    command = '''UPDATE event 
-                 SET Status = %s, Event_Date = %s, Venue = %s 
-                 WHERE Event_ID = %s'''
-    
     try:
+        event_id = input("Enter the Event ID to update: ")
+        cursor.execute("SELECT * FROM event WHERE Event_ID = %s", (event_id,))
+        event = cursor.fetchone()
+
+        if not event:
+            print("Event not found.")
+            return
+
+        valid_statuses = ["Active", "Cancelled", "Postponed", "Completed"]
+
+        status = input("Enter the new status (Active, Cancelled, Postponed, Completed) or press Enter to keep current: ")
+        if status.strip() == "":
+            status = event[7]
+        elif status not in valid_statuses:
+            print("Invalid status. Please enter one of the following: Active, Cancelled, Postponed, Completed.")
+            return
+
+        while True:
+            event_date_input = input("Enter new Date of Event (YYYY-MM-DD) or press Enter to keep current: ")
+            if event_date_input.strip() == "":
+                event_date = event[2]
+                break
+            try:
+                event_date = datetime.strptime(event_date_input, '%Y-%m-%d').date()
+                break
+            except ValueError:
+                print("Invalid date format. Please use YYYY-MM-DD.")
+
+        venue = input("Enter the new venue or press Enter to keep current: ")
+        if venue.strip() == "":
+            venue = event[4]
+
+        command = '''UPDATE event 
+                     SET Status = %s, Event_Date = %s, Venue = %s 
+                     WHERE Event_ID = %s'''
+        
         cursor.execute(command, (status, event_date, venue, event_id))
         db.commit()
         print("Event updated successfully.")
+
+        # Fetch the updated event details
+        cursor.execute("SELECT * FROM event WHERE Event_ID = %s", (event_id,))
+        updated_event = cursor.fetchone()
+
+        # Create and display the updated event in PrettyTable format
+        table = PrettyTable()
+        table.field_names = ["Event ID", "Event Name", "Event Date", "Venue", "Status"]
+        table.add_row(updated_event)
+
+        print("\nUpdated Event Details:")
+        print(table)
+
     except mysql.connector.Error as err:
         print("Error:", err)
-        return  # Exit the function on error
 
-    # Fetch the updated event details
-    cursor.execute("SELECT * FROM event WHERE Event_ID = %s", (event_id,))
-    updated_event = cursor.fetchone()
-
-    # Create and display the updated event in PrettyTable format
-    table = PrettyTable()
-    table.field_names = ["Event ID", "Event Name", "Event Date", "Venue", "Status"]
-    table.add_row(updated_event)
-
-    print("\nUpdated Event Details:")
-    print(table)
-
-    cursor.close()
-    db.close()
+    finally:
+        cursor.close()
+        db.close()
+        Admin2()
