@@ -13,7 +13,7 @@ The Alumni Management System is a Python-based application integrated with a MyS
 ## **Installation**
 1. **Clone the repository**:
    ```bash
-   git clone <repository_url>
+   git clone https://github.com/thebatmanbeginning/Alumni-Management
    ```
 2. **Install the required dependencies**:
    ```bash
