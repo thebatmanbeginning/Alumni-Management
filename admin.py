@@ -4,78 +4,79 @@ from utils import get_input
 def Admin():
     login_successful = adminlog()  # Getting the result(True or False)
     
-    if login_successful:  #Only runs when the login_successful is True 
-        print('-------WELCOME----------')
-        print('''Please Select an Option
-              \n1. Student Registration
-              \n2. Update Student Data
-              \n3. Create Event
-              \n4. Update Event
-              \n5. Send Mail
-              \n6. Search Students
-              \n7. Main Menu
-              \n8. Exit''')
-        print("\n\n\n")
-        choice = int(input('Enter a Choice (1-8): '))
-        
-        if choice == 1:
-            register_stu()
-        elif choice == 2:
-            update_stu()
-        elif choice == 3:
-            create_event()
-        elif choice == 4:
-            update_event()
-        elif choice == 5:
-            send_email_message()
-        elif choice == 6:
-            search()
-        elif choice == 7:
-            login()
-        elif choice == 8:
-            exit()
-        else:
-            print('Invalid input!')
-    else:
-        print('Login failed. Please try again.')
+    if login_successful:  # Only runs when the login_successful is True 
+        while True:
+            print('-------WELCOME----------')
+            print('''Please Select an Option
+                  \n1. Student Registration
+                  \n2. Update Student Data
+                  \n3. Create Event
+                  \n4. Update Event
+                  \n5. Send Mail
+                  \n6. Search Students
+                  \n7. Main Menu
+                  \n8. Exit''')
+            print("\n\n\n")
+            choice = int(input('Enter a Choice (1-8): '))
+
+            if choice == 1:
+                register_stu()
+            elif choice == 2:
+                update_stu()
+            elif choice == 3:
+                create_event()
+            elif choice == 4:
+                update_event()
+            elif choice == 5:
+                send_email_message()
+            elif choice == 6:
+                search()  # This will not call Admin2 immediately
+                continue  # Go back to the menu
+            elif choice == 7:
+                login()
+            elif choice == 8:
+                exit()
+            else:
+                print('Invalid input!')
 
 def Admin2():
-    login_successful = True  # Getting the result(True or False)
+    login_successful = True  # Assuming this always succeeds for this example
     
-    if login_successful:  #Only runs when the login_successful is True 
-        print('-------WELCOME----------')
-        print('''Please Select an Option
-              \n1. Student Registration
-              \n2. Update Student Data
-              \n3. Create Event
-              \n4. Update Event
-              \n5. Send Mail
-              \n6. Search Students
-              \n7. Main Menu
-              \n8. Exit''')
-        print("\n\n\n")
-        choice = int(input('Enter a Choice (1-8): '))
-        
-        if choice == 1:
-            register_stu()
-        elif choice == 2:
-            update_stu()
-        elif choice == 3:
-            create_event()
-        elif choice == 4:
-            update_event()
-        elif choice == 5:
-            send_email_message()
-        elif choice == 6:
-            search()
-        elif choice == 7:
-            login()
-        elif choice == 8:
-            exit()
-        else:
-            print('Invalid input!')
-    else:
-        print('Login failed. Please try again.')
+    if login_successful:  # Only runs when the login_successful is True 
+        while True:
+            print('-------WELCOME----------')
+            print('''Please Select an Option
+                  \n1. Student Registration
+                  \n2. Update Student Data
+                  \n3. Create Event
+                  \n4. Update Event
+                  \n5. Send Mail
+                  \n6. Search Students
+                  \n7. Main Menu
+                  \n8. Exit''')
+            print("\n\n\n")
+            choice = int(input('Enter a Choice (1-8): '))
+
+            if choice == 1:
+                register_stu()
+            elif choice == 2:
+                update_stu()
+            elif choice == 3:
+                create_event()
+            elif choice == 4:
+                update_event()
+            elif choice == 5:
+                send_email_message()
+            elif choice == 6:
+                search()  # Same here
+                continue  # Go back to the menu
+            elif choice == 7:
+                login()
+            elif choice == 8:
+                exit()
+            else:
+                print('Invalid input!')
+
 def adminlog():
     import mysql
     import mysql.connector
@@ -181,13 +182,13 @@ def register_stu():
 def search():
     from utils import get_user_input
     import mysql.connector
-    from prettytable import PrettyTable  # Import PrettyTable
+    from prettytable import PrettyTable
 
     # Establish a database connection
     db = mysql.connector.connect(host="localhost", user="root", password="1234", database="alumni")
     cursor = db.cursor()
 
-    # Base query for searching students, using student_id as the primary key
+    # Base query for searching students
     query = "SELECT student_id, Name, F_Name, M_Name, Passing_Year, Stream, Employment_Status, Company, E_Domain, Email_ID FROM students WHERE 1=1"
     params = []
 
@@ -202,7 +203,7 @@ def search():
     company = get_user_input("Enter the company (or press Enter to skip): ")
     domain = get_user_input("Enter the employment domain (or press Enter to skip): ")
 
-    # Add conditions based on user input, if provided
+    # Add conditions based on user input
     if name:
         query += " AND Name = %s"
         params.append(name)
@@ -244,14 +245,19 @@ def search():
     # Display results in a table format
     if not results:
         print("No results found.")
+        return [], []  # Return empty lists if no results found
     else:
         print("Search Results:")
         print(table)  # Print the PrettyTable
-        return result
+
     # Close the connection
     cursor.close()
     db.close()
-    Admin2()   
+
+    # Create a list of emails
+    email_list = [result[9] for result in results]  # Email_ID is the last column
+    return results, email_list  # Return student data and list of emails
+
 '''----------------------------------------------UPDATE STUDENT-----------------------------------------------------'''
 def update_stu():
     from utils import get_user_input
@@ -260,21 +266,23 @@ def update_stu():
     db = mysql.connector.connect(host="localhost", user="root", password="1234", database="alumni")
     cursor = db.cursor()
 
-    # Search for students and get results
     students = search()
     if not students:
         print("No students found for the given criteria.")
         return
 
-    # Choose a student to update if multiple results were returned
-    if len(students) > 1:
-        print("Multiple students found. Select a student to update:")
-        for i in range(len(students)):
-            print(i + 1, ":", students[i])
-        choice = get_user_input("Select a student by number to update: ", is_int=True)
-        student_id = students[choice - 1][0]  # Get student_id from the selected result
-    else:
-        student_id = students[0][0]  # Use the first result's student_id if only one result
+    # Ensure students is a list of tuples
+    if isinstance(students, tuple):
+        students = [students]  # Wrap in a list if it's a single tuple
+
+    print("Students data:", students)
+
+    print("Multiple students found. Select students to update (comma-separated IDs):")
+    for student in students:
+        print(str(student[0]) + ": " + student[1])
+
+    selected_ids = get_user_input("Enter student IDs to update (comma-separated): ").split(',')
+    selected_ids = [s.strip() for s in selected_ids]
 
     print("----------------Select option to update-----------------")
     print(
@@ -291,7 +299,6 @@ def update_stu():
 
     option = get_user_input("Please enter your Option (1-9): ", is_int=True)
 
-    # Define field updates based on the selected option
     if option == 1:
         new_value = get_user_input("Enter the new class: ")
         command = "UPDATE students SET Class = %s WHERE student_id = %s"
@@ -326,12 +333,12 @@ def update_stu():
         print("Invalid option selected.")
         return
 
-    # Execute the update command
-    cursor.execute(command, (new_value, student_id))
+    for student_id in selected_ids:
+        cursor.execute(command, (new_value, student_id))
+    
     db.commit()
     print("Update successful.")
 
-    # Close database resources
     cursor.close()
     db.close()
     Admin2()
@@ -393,21 +400,10 @@ def send_email_message():
     import smtplib
 
     while True:
-        # Fetch the search result
-        student_data = search()
-
-        if not student_data:  # If no students are found
+        recipients, emails = search()  # Perform the search and get recipients and emails
+        if not recipients:
             print("No students found to send emails.")
             return
-
-        # Display search results and collect email addresses and names
-        recipients = []
-        for student in student_data:
-            student_id = student[0]
-            recipient_name = student[1]
-            recipient_email = student[9]
-            print("ID:", student_id, "Name:", recipient_name, "Email:", recipient_email)
-            recipients.append((recipient_name, recipient_email))
 
         # Confirm sending email to all recipients
         send_to_all = input("Send email to all listed students? (Y/N): ").strip().upper()
@@ -431,8 +427,9 @@ def send_email_message():
                     "Best regards,\nAlumni Management Team"
                 )
 
-                for recipient_name, recipient_email in recipients:
-                    body = body_template.replace("{}", recipient_name)
+                # Loop through recipients and emails
+                for (student_id, recipient_name, *other_info, recipient_email) in recipients:
+                    body = body_template.format(recipient_name)
                     message = "Subject: " + subject + "\n\n" + body
 
                     # Send the email to the current recipient
@@ -522,3 +519,5 @@ def update_event():
         cursor.close()
         db.close()
         Admin2()
+
+search()
