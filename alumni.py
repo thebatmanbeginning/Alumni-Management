@@ -22,22 +22,6 @@ def Alumni():
         exit()
     else:
         print('Invalid input!')
-def get_valid_date(prompt):
-    from datetime import datetime
-
-    attempts = 0  # Track the number of attempts
-    while attempts < 3:  # Allow up to 3 attempts
-        date_str = input(prompt)
-        try:
-            # Try to parse the date
-            valid_date = datetime.strptime(date_str, "%Y-%m-%d").date()  # Format YYYY-MM-DD
-            return valid_date
-        except ValueError:
-            print("Invalid date format. Please enter a valid date in the format YYYY-MM-DD.")
-            attempts += 1
-
-    print("Too many invalid attempts.")
-    return None  # Return None if the user fails to provide a valid date
 def alumni_register():
     import mysql.connector
 
@@ -156,32 +140,6 @@ def view_events():
     cursor.close()
     db.close()
     Alumni()
-def search_alumni(name=None, email=None, passing_year=None):
-    import mysql.connector
-
-    db = mysql.connector.connect(host='localhost', user='root', password='1234', database='alumni')
-    cursor = db.cursor()
-
-    query = "SELECT * FROM alumni_students WHERE 1=1"
-    parameters = []
-
-    if name:
-        query += " AND Name=%s"
-        parameters.append(name)
-    if email:
-        query += " AND Email_ID=%s"
-        parameters.append(email)
-    if passing_year:
-        query += " AND Passing_Year=%s"
-        parameters.append(passing_year)
-
-    cursor.execute(query, tuple(parameters))
-    results = cursor.fetchall()
-
-    cursor.close()
-    db.close()
-    Alumni()
-    return results
 def reg_events():
     import mysql.connector
     from datetime import datetime
@@ -243,3 +201,40 @@ def reg_events():
     cursor.close()
     db.close()
     Alumni()
+def search_alumni(name=None, email=None, passing_year=None):
+    import mysql.connector
+    from prettytable import PrettyTable
+
+    db = mysql.connector.connect(host='localhost', user='root', password='1234', database='alumni')
+    cursor = db.cursor()
+
+    query = "SELECT * FROM alumni_students WHERE 1=1"
+    parameters = []
+
+    if name:
+        query += " AND Name=%s"
+        parameters.append(name)
+    if email:
+        query += " AND Email_ID=%s"
+        parameters.append(email)
+    if passing_year:
+        query += " AND Passing_Year=%s"
+        parameters.append(passing_year)
+
+    cursor.execute(query, tuple(parameters))
+    results = cursor.fetchall()
+
+    if results:
+        table = PrettyTable()
+        table.field_names = ["Alumni ID", "Name", "Email ID", "Passing Year"]
+        for row in results:
+            table.add_row(row[:4])  # Adjust this if the table has more fields
+        print("\nSearch Results:")
+        print(table)
+    else:
+        print("No alumni found with the specified criteria.")
+
+    cursor.close()
+    db.close()
+    Alumni()
+    return results
