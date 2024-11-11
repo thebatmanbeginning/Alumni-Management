@@ -94,7 +94,7 @@ def view_events():
         table.field_names = ["Event ID", "Event Name", "Event Date", "Venue", "Status"]
 
         if choice == 1:
-            cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Venue, Status FROM event WHERE Status='Active'")
+            cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Venue, Status FROM events WHERE Status='Active'")
             active_events = cursor.fetchall()
             for event in active_events:
                 table.add_row(event)
@@ -102,7 +102,7 @@ def view_events():
             break  # Exit the loop after displaying the events
 
         elif choice == 2:
-            cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Venue, Status FROM event WHERE Status='Completed'")
+            cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Venue, Status FROM events WHERE Status='Completed'")
             completed_events = cursor.fetchall()
             for event in completed_events:
                 table.add_row(event)
@@ -110,7 +110,7 @@ def view_events():
             break  # Exit the loop after displaying the events
 
         elif choice == 3:
-            cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Venue, Status FROM event WHERE Status='Postponed'")
+            cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Venue, Status FROM events WHERE Status='Postponed'")
             postponded_events = cursor.fetchall()
             for event in postponded_events:
                 table.add_row(event)
@@ -118,7 +118,7 @@ def view_events():
             break  # Exit the loop after displaying the events
 
         elif choice == 4:
-            cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Venue, Status FROM event WHERE Status='Cancelled'")
+            cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Venue, Status FROM events WHERE Status='Cancelled'")
             cancelled_events = cursor.fetchall()
             for event in cancelled_events:
                 table.add_row(event)
@@ -149,7 +149,7 @@ def reg_events():
     cursor = db.cursor()
 
     # Fetch active events with available seats
-    cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Available_Seats FROM event WHERE Status='Active' AND Available_Seats > 0")
+    cursor.execute("SELECT Event_ID, Event_Name, Event_Date, Available_Seats FROM events WHERE Status='Active' AND Available_Seats > 0")
     events = cursor.fetchall()
 
     if not events:
@@ -169,7 +169,7 @@ def reg_events():
 
     while True:
         event_id = get_input("Enter the Event ID to register: ", is_int=True)
-        cursor.execute("SELECT Event_ID, Available_Seats FROM event WHERE Event_ID=%s AND Status='Active' AND Available_Seats > 0", (event_id,))
+        cursor.execute("SELECT Event_ID, Available_Seats FROM events WHERE Event_ID=%s AND Status='Active' AND Available_Seats > 0", (event_id,))
         selected_event = cursor.fetchone()
 
         if selected_event:
@@ -188,7 +188,7 @@ def reg_events():
                                   VALUES (%s, %s, %s)''', (event_id, alumni_id, registration_date))
 
                 # Decrement the number of available seats by 1
-                cursor.execute("UPDATE event SET Available_Seats = Available_Seats - 1 WHERE Event_ID = %s", (event_id,))
+                cursor.execute("UPDATE events SET Available_Seats = Available_Seats - 1 WHERE Event_ID = %s", (event_id,))
 
                 db.commit()
                 print("You have successfully registered for the event! Seats remaining:", seats_available - 1)
