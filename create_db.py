@@ -74,7 +74,7 @@ def reset_and_create_database():
 
     # Recreate event table with Status as VARCHAR instead of ENUM
     cursor.execute('''
-    CREATE TABLE IF NOT EXISTS event (
+    CREATE TABLE IF NOT EXISTS events (
         Event_ID INT AUTO_INCREMENT PRIMARY KEY,
         Event_Name VARCHAR(255),
         Event_Date DATE,
